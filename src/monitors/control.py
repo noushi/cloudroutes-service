@@ -27,6 +27,8 @@ import signal
 import json
 import logconfig
 
+from apscheduler.schedulers.blocking import BlockingScheduler
+
 # Load Configuration
 # ------------------------------------------------------------------
 
@@ -37,9 +39,8 @@ if len(sys.argv) != 2:
 
 # Open Config File and Parse Config Data
 configfile = sys.argv[1]
-cfh = open(configfile, "r")
-config = yaml.safe_load(cfh)
-cfh.close()
+with open(configfile, "r") as cfh:
+    config = yaml.safe_load(cfh)
 
 
 # Make Connections
@@ -68,25 +69,18 @@ zsend.connect(connaddress)
 logger.info("Connecting to broker at %s" % connaddress)
 
 
-# Handle Kill Signals Cleanly
+# Configure the scheduler
 # ------------------------------------------------------------------
 
-def killhandle(signum, frame):
-    ''' This will close connections cleanly '''
-    logger.info("SIGTERM detected, shutting down")
-    sys.exit(0)
+job_defaults = {
+    'coalesce': True,
+}
 
-signal.signal(signal.SIGTERM, killhandle)
+scheduler = BlockingScheduler(job_defaults=job_defaults, logger=logger)
 
-
-# Run For Loop
-# ------------------------------------------------------------------
-
-# Let the workers get started
-time.sleep(20)
-
-# Start an infinante loop that checks every 2 minutes
-while True:
+@scheduler.scheduled_job('interval', seconds=config['sleep'],
+                         id='watcher-{0}'.format(config['sleep']))
+def watch():
     count = 0
     # Get list of members to check from queue
     for check in r_server.smembers(config['queue']):
@@ -123,5 +117,27 @@ while True:
 
     logger.debug(
         "Sent %d health checks from queue %s" % (count, config['queue']))
-    # Sleep for x seconds
-    time.sleep(config['sleep'])
+
+    logger.info('Number of jobs in scheduler: ' \
+                '{0}'.format(len(scheduler.get_jobs())))
+
+
+# Handle Kill Signals Cleanly
+# ------------------------------------------------------------------
+
+def killhandle(signum, frame):
+    ''' This will close connections cleanly '''
+    logger.info("SIGTERM detected, shutting down")
+    scheduler.shutdown()
+    sys.exit(0)
+
+signal.signal(signal.SIGTERM, killhandle)
+
+
+# Run the scheduler
+# ------------------------------------------------------------------
+
+# Let the workers get started
+time.sleep(20)
+
+scheduler.start()
