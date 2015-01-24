@@ -30,6 +30,7 @@ import time
 import zmq
 import json
 
+from apscheduler.schedulers.blocking import BlockingScheduler
 
 # Load Configuration
 # ------------------------------------------------------------------
@@ -41,9 +42,8 @@ if len(sys.argv) != 2:
 
 # Open Config File and Parse Config Data
 configfile = sys.argv[1]
-cfh = open(configfile, "r")
-config = yaml.safe_load(cfh)
-cfh.close()
+with open(configfile, "r") as cfh:
+    config = yaml.safe_load(cfh)
 
 
 # Open External Connections
@@ -96,6 +96,7 @@ def killhandle(signum, frame):
     logger.info("SIGTERM detected, shutting down")
     rdb_server.close()
     zsend.close()
+    scheduler.shutdown()
     sys.exit(0)
 
 signal.signal(signal.SIGTERM, killhandle)
@@ -195,7 +196,17 @@ for item in r_server.smembers("events"):
 logger.info("Imported %d events records from cache to rethinkDB" % recount)
 
 # Run the queue watcher
-while True:
+# ------------------------------------------------------------------
+
+job_defaults = {
+    'coalesce': True,
+}
+
+scheduler = BlockingScheduler(job_defaults=job_defaults, logger=logger)
+
+@scheduler.scheduled_job('interval', seconds=config['sleep'],
+                         id='watcher-{0}'.format(config['sleep']))
+def watch():
     results = r.table(config['dbqueue']).run(rdb_server)
 
     for qitem in results:
@@ -294,5 +305,8 @@ while True:
                     if delete['deleted'] == 1:
                         logger.debug("Queue entry %s removed from RethinkDB queue" % qitem['id'])
 
-    # Sleep for 10 seconds
-    time.sleep(config['sleep'])
+
+# Run the scheduler
+# ------------------------------------------------------------------
+
+scheduler.start()
