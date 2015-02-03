@@ -19,15 +19,14 @@
 # ------------------------------------------------------------------
 
 import sys
-import redis
 import zmq
 import time
 import yaml
 import signal
-import json
 import logconfig
 
 from apscheduler.schedulers.blocking import BlockingScheduler
+from retrieve import create_retriever
 
 # Load Configuration
 # ------------------------------------------------------------------
@@ -48,17 +47,11 @@ with open(configfile, "r") as cfh:
 
 # Init logger
 logger = logconfig.getLogger('monitors.control', config['use_syslog'])
-
 logger.info("Using config %s" % configfile)
 
-# Redis Server
-try:
-    r_server = redis.Redis(
-        host=config['redis_host'], port=config['redis_port'],
-        db=config['redis_db'], password=config['redis_password'])
-except:
-    logger.error("Cannot connect to redis, shutting down")
-    sys.exit(1)
+# Init monitor data retriever
+mdr = create_retriever(config=config, logger=logger)
+logger.info("Using {0} retriever".format(mdr.__class__.__name__))
 
 # Start ZeroMQ listener
 context = zmq.Context()
@@ -81,42 +74,8 @@ scheduler = BlockingScheduler(job_defaults=job_defaults, logger=logger)
 @scheduler.scheduled_job('interval', seconds=config['sleep'],
                          id='watcher-{0}'.format(config['sleep']))
 def watch():
-    count = 0
-    # Get list of members to check from queue
-    for check in r_server.smembers(config['queue']):
-        checkdata = {'cid': check, 'data': {}}
-        # Non-Data Keys
-        monkey = "monitor:" + check
-        for key in r_server.hkeys(monkey):
-            value = r_server.hget(monkey, key)
-            if value == "slist":
-                checkdata[key] = []
-                listkey = monkey + ":" + key
-                for entry in r_server.smembers(listkey):
-                    checkdata[key].append(entry)
-            else:
-                checkdata[key] = value
-        # Data Keys
-        monkey = "monitor:" + check + ":data"
-        for key in r_server.hkeys(monkey):
-            value = r_server.hget(monkey, key)
-            if value == "slist":
-                checkdata['data'][key] = []
-                listkey = monkey + ":" + key
-                for entry in r_server.smembers(listkey):
-                    checkdata['data'][key].append(entry)
-            else:
-                checkdata['data'][key] = value
-        checkdata['time_tracking'] = {'control': time.time(),
-                                      'ez_key': config['stathat_key'],
-                                      'env': str(config['envname'])}
-        checkdata['zone'] = config['zone']
-        jdata = json.dumps(checkdata)
+    for jdata in mdr.retrieve():
         zsend.send(jdata)
-        count = count + 1
-
-    logger.debug(
-        "Sent %d health checks from queue %s" % (count, config['queue']))
 
     logger.info('Number of jobs in scheduler: ' \
                 '{0}'.format(len(scheduler.get_jobs())))

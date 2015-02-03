@@ -14,6 +14,8 @@ zone: Docker Dev Zones
 broker_ip: broker_host
 broker_control_port: 5879
 broker_worker_port: 5878
+## Monitor Data Retriever
+mdr_class: RedisMDR
 ## Redis Config
 redis_host: redis_ip
 redis_port: 6379
