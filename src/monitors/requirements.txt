@@ -5,3 +5,4 @@ requests==1.2.3
 cffi>=0.8
 cryptography==0.5.4
 pyOpenSSL==0.14
+boto==2.36.0
