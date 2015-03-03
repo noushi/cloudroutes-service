@@ -31,6 +31,9 @@ def path_insert(yml_path, path_keys, dry_run = 1):
     Gets the correct target root path.
     Iterates over paths given as yaml configuration keys
     and adds them to the sys.path if legitimate.
+    
+    Run it like:
+    path_insert(r'D:\cloudroutes-service\src\bridge\config\config.yml.example', ['common_src'], dry_run=1)
     """
     with yaml_load(open(yml_path)) as f:
         parent_path, root_dir_name = get_root_path()
