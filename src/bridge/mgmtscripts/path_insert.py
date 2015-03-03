@@ -1,3 +1,17 @@
+#!/usr/bin/python
+
+#################################################
+
+# Use common code from src/common
+# Description:
+# ------------------------------------------------------------------
+# 1. Finds root project dir
+# 2. Iterates over paths given as yaml configuration keys
+# 3. Adds them to the sys.path if legitimate.
+# Original Author: Akul S - akurnya@gmail.com
+#################################################
+
+
 import os
 import sys
 import yaml
