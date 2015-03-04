@@ -56,6 +56,7 @@ def path_insert(path_keys, yml_path=r'src\bridge\config\config.yml.example', dry
     
     with yaml_load(open(yml_path)) as f:
         for key in path_keys:
+            #We can use any value separator.using comma separated path value here
             paths = [root_dir_name] + f[key].split(',')
             target_path = os.path.join(parent_path, *paths)
             if os.path.exists(target_path):
