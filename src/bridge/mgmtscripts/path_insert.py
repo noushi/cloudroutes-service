@@ -40,17 +40,21 @@ def get_root_path(parent_path= os.getcwd(), root_path='cloudroutes-service'):
     else: return get_root_path(parent_path=parent_path)
 
 
-def path_insert(yml_path, path_keys, dry_run = 1):
+def path_insert(path_keys, yml_path=r'src\bridge\config\config.yml.example', dry_run = 1):
     """
     Gets the correct target root path.
     Iterates over paths given as yaml configuration keys
     and adds them to the sys.path if legitimate.
     
     Run it like:
-    path_insert(r'D:\cloudroutes-service\src\bridge\config\config.yml.example', ['common_src'], dry_run=1)
+    path_insert(['common_src'], dry_run=1)
     """
+    #Get the project root path
+    parent_path, root_dir_name = get_root_path()
+    #Get the YAML config file path from rel path - supply a yml config file
+    yml_path = os.path.join(parent_path, yml_path)
+    
     with yaml_load(open(yml_path)) as f:
-        parent_path, root_dir_name = get_root_path()
         for key in path_keys:
             paths = [root_dir_name] + f[key].split(',')
             target_path = os.path.join(parent_path, *paths)
