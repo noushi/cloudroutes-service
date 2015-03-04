@@ -52,8 +52,8 @@ def path_insert(path_keys, yml_path=r'src\bridge\config\config.yml.example', dry
     #Get the project root path
     parent_path, root_dir_name = get_root_path()
     #Get the YAML config file path from rel path - supply a yml config file
-    yml_path = os.path.join(parent_path, yml_path)
-    
+    yml_path = os.path.join(parent_path, root_dir_name, yml_path)
+    #print yml_path
     with yaml_load(open(yml_path)) as f:
         for key in path_keys:
             #We can use any value separator.using comma separated path value here
