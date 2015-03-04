@@ -28,4 +28,6 @@ mailchimp_api_url: "update_me"
 ## Logging
 use_syslog: False
 ## Global Import Dirs
-common_src: "src,common"
+common_src:
+  - src
+  - common

@@ -56,11 +56,13 @@ def path_insert(path_keys, yml_path=r'src\bridge\config\config.yml.example', dry
     #print yml_path
     with yaml_load(open(yml_path)) as f:
         for key in path_keys:
-            #We can use any value separator.using comma separated path value here
-            paths = [root_dir_name] + f[key].split(',')
+            #We can use any value separator.using yaml sequence
+            paths = [root_dir_name] + f[key]
             target_path = os.path.join(parent_path, *paths)
             if os.path.exists(target_path):
                 if dry_run:
                     print "Dry run path %s" %(target_path)
                 else:
                     sys.path.insert(1,target_path)
+            else:
+                raise Exception("PathError: Supplied target path is not correct. Please check one of the supplied path values in the root path and configuration file.")
