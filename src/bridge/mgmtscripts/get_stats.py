@@ -27,6 +27,7 @@ import json
 import pprint
 
 from runbookdb import RunbookDB
+from path_insert import path_insert
 
 # Load Configuration
 # ------------------------------------------------------------------
@@ -40,6 +41,8 @@ configfile = sys.argv[1]
 
 with open(configfile, 'r') as cfh:
     config = yaml.safe_load(cfh)
+    path_insert(config, ['common_src'])
+    
 
 # Open External Connections
 # ------------------------------------------------------------------

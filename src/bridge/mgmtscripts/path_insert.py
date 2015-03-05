@@ -1,5 +1,4 @@
 #!/usr/bin/python
-
 #################################################
 
 # Use common code from src/common
@@ -14,19 +13,20 @@
 
 import os
 import sys
-import yaml
-import contextlib
 
-@contextlib.contextmanager
-def yaml_load(yml_stream):
-    try:
-        f = yaml.load(yml_stream)
-        yield f
-    except AttributeError, e:
-        print "Error %s" %(e)
-    finally:
-        del f
-        
+
+class PathError(Exception):
+    """
+    Excetion handling for incorrect path.
+    """
+    def __init__(self, target_path):
+        # Call the base class
+        super(PathError, self).__init__()
+        self.message = """Supplied target path %s is not correct.\n
+        Please check one of the supplied path values in the root path and configuration file.""" %(target_path)
+    
+    def __str__(self):
+        return (self.message)
 
 
 def get_root_path(parent_path= os.getcwd(), root_path='cloudroutes-service'):    
@@ -40,29 +40,45 @@ def get_root_path(parent_path= os.getcwd(), root_path='cloudroutes-service'):
     else: return get_root_path(parent_path=parent_path)
 
 
-def path_insert(path_keys, yml_path=r'src\bridge\config\config.yml.example', dry_run = 1):
+def add_path(target_path, dry_run=1):
+    #Inserts path to namespace
+    if os.path.exists(target_path):
+        if dry_run:
+            print "Dry run path %s" %(target_path)
+        else:
+            sys.path.insert(1,target_path)
+    else:
+        raise PathError(target_path)
+    
+
+def path_insert(yml_config, path_keys, dest_path = None, dry_run = 1):
     """
     Gets the correct target root path.
-    Iterates over paths given as yaml configuration keys
-    and adds them to the sys.path if legitimate.
+    Adds dest_path if it is the relative path to a directory to include in 
+    the sys.path.
+    Else retrives from path_keys a list of keys that correspond to keys in 
+    a yaml config file, iterates over these keys and adds values as the 
+    destination path to the sys.path if legitimate.
     
     Run it like:
-    path_insert(['common_src'], dry_run=1)
+    with open(yaml_file, 'r') as cfh:
+        config = yaml.safe_load(cfh)
+        path_insert(config, ['common_src'])
+    
+    yml_config: A parsed yaml document
+    path_keys: A list of keys to lookup from the given yaml file.
+    dest_path: A string destination path if given else None.
+    dry_run: If value is 1, runs the procedure without adding to the sys.path
+    returning the legitimate path(s) else if the value is 0, adds those paths.
     """
+    
     #Get the project root path
     parent_path, root_dir_name = get_root_path()
-    #Get the YAML config file path from rel path - supply a yml config file
-    yml_path = os.path.join(parent_path, root_dir_name, yml_path)
-    #print yml_path
-    with yaml_load(open(yml_path)) as f:
-        for key in path_keys:
-            #We can use any value separator.using yaml sequence
-            paths = [root_dir_name] + f[key]
-            target_path = os.path.join(parent_path, *paths)
-            if os.path.exists(target_path):
-                if dry_run:
-                    print "Dry run path %s" %(target_path)
-                else:
-                    sys.path.insert(1,target_path)
-            else:
-                raise Exception("PathError: Supplied target path is not correct. Please check one of the supplied path values in the root path and configuration file.")
+    
+    if isinstance(dest_path, str):
+        target_path = os.path.join(parent_path, root_dir_name, dest_path)
+        add_path(target_path, dry_run=dry_run)
+    
+    for key in path_keys:
+        target_path = os.path.join(parent_path, root_dir_name, *yml_config[key])
+        add_path(target_path, dry_run=dry_run)
