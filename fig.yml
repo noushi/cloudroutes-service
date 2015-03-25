@@ -1,3 +1,8 @@
+common:
+  build: src/common/
+  command: bash /code/bootstrap.sh
+  volumes:
+    - src/common:code:ro
 db:
   image: dockerfile/rethinkdb
   ports:
