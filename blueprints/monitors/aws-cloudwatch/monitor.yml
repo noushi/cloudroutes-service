@@ -1,0 +1,28 @@
+reaction:
+  name: aws-cloudwatch
+  title: "AWS Cloudwatch: Metric Trigger"
+
+attributes:
+  - attribute: subdomain
+    name: Subdomain
+    type: TextField
+    validators: [DataRequired(message="Subdomain is a required field")]
+    desc: This field should contain your PagerDuty Subdomain.
+
+  - attribute: api_key
+    name: API Key
+    type: TextField
+    validators: [DataRequired(message="API Key is a required field")]
+    desc: This field should contain your PagerDuty API Key
+
+  - attribute: service_key
+    name: Service Key
+    type: TextField
+    validators: [DataRequired(message='Service Key is a required field')]
+    desc: This field should contain your PagerDuty Service Key.
+
+  - attribute: call_on
+    name: Call On
+    type: SelectField
+    choices: "[('false', 'False Monitors'), ('true', 'True Monitors')]"
+    validators: [DataRequired(message='Call On is a required field')]
