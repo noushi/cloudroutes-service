@@ -1,6 +1,10 @@
 #!/bin/bash
 ## Docker Bootstrap Script
 
+echo "[BOOTSTRAP] Exporting /code/common to PYTHONPATH"
+echo "-------------------------------------------------"
+export PYTHONPATH=$PYTHONPATH:/code/common
+
 echo "Bootstrapping Application Environmental"
 
 echo "[BOOTSTRAP] Dumping Docker Environment:"

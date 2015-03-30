@@ -27,6 +27,7 @@ import json
 import pprint
 
 from runbookdb import RunbookDB
+#from path_insert import path_insert
 
 # Load Configuration
 # ------------------------------------------------------------------
@@ -40,6 +41,8 @@ configfile = sys.argv[1]
 
 with open(configfile, 'r') as cfh:
     config = yaml.safe_load(cfh)
+    #path_insert(config, ['common_src'])
+
 
 # Open External Connections
 # ------------------------------------------------------------------
@@ -87,12 +90,12 @@ total_up_users = {
     'monthly' : 0,
     'yearly' : 0,
     'total' : 0
-} 
+}
 total_up_mons = {
     'monthly' : 0,
     'yearly' : 0,
     'total' : 0
-} 
+}
 
 for user in result:
     total_up_users['total'] = total_up_users['total'] + 1
